@@ -136,6 +136,8 @@ Add your Google Cloud service account JSON file:
 google-credentials.json
 ```
 
+---
+
 ### Usage
 
 Run:
@@ -151,6 +153,8 @@ Enter number of results:
 
 Check your Google Sheet — the leads will appear there automatically.
 
+---
+
 ### Why This Tool Exists
 
 Manually researching small businesses for outreach is slow and painful.
@@ -165,6 +169,8 @@ give freelancers an edge
 provide clean, structured leads instantly
 
 It’s especially useful for those targeting NZ small businesses, where online presence is inconsistent and manually searching is time-consuming.
+
+---
 
 ### Author
 
