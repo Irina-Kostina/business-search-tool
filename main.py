@@ -7,7 +7,8 @@ from urllib.parse import urlparse
 import requests
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
-from duckduckgo_search import DDGS
+
+from duckduckgo_search import DDGS   # ← ONLY this import, no duplicates
 
 import gspread
 from google.oauth2.service_account import Credentials
@@ -41,10 +42,7 @@ def extract_emails(text: str):
 
 
 def extract_phones(text: str):
-    """
-    Very simple phone pattern.
-    It will not be perfect, but good enough for a first version.
-    """
+    """Simple NZ phone regex."""
     pattern = r"(\+?\d[\d\s().-]{7,}\d)"
     phones = re.findall(pattern, text)
     cleaned = [p.strip() for p in phones]
@@ -52,10 +50,7 @@ def extract_phones(text: str):
 
 
 def extract_social_links(text: str):
-    """
-    Find Instagram and Facebook links in the text.
-    Returns (instagram_url, facebook_url).
-    """
+    """Find Instagram and Facebook links."""
     insta_pattern = r"(https?://(?:www\.)?instagram\.com/[^\s\"']+)"
     fb_pattern = r"(https?://(?:www\.)?facebook\.com/[^\s\"']+)"
 
@@ -69,7 +64,7 @@ def extract_social_links(text: str):
 
 
 def get_page_html(url: str) -> str:
-    """Download HTML for a URL with a browser-like User-Agent."""
+    """Download HTML for a URL with browser-like headers."""
     try:
         headers = {
             "User-Agent": (
@@ -90,30 +85,21 @@ def get_page_html(url: str) -> str:
 
 
 def parse_business_info(url: str, query: str) -> dict | None:
-    """
-    Open website and extract:
-    - business name (from <title> or domain)
-    - emails
-    - phones
-    - instagram + facebook
-    """
+    """Extract business metadata from webpage."""
     html = get_page_html(url)
     if not html:
         return None
 
     soup = BeautifulSoup(html, "html.parser")
 
-    # <title> as a simple business name guess
     title_tag = soup.find("title")
     title = clean_text(title_tag.get_text()) if title_tag else ""
 
-    # meta description (for context)
     desc_tag = soup.find("meta", attrs={"name": "description"})
     meta_desc = clean_text(desc_tag["content"]) if desc_tag and desc_tag.get("content") else ""
 
-    # Text for regex scanning
     body_text = soup.get_text(separator=" ", strip=True)
-    body_short = body_text[:8000]  # limit length
+    body_short = body_text[:8000]
 
     emails = extract_emails(body_short)
     phones = extract_phones(body_short)
@@ -138,21 +124,39 @@ def parse_business_info(url: str, query: str) -> dict | None:
     }
 
 
+# =====================
+# FIXED DuckDuckGo search
+# =====================
+
 def search_business_urls(query: str, num_results: int = 10):
     """
-    Use DuckDuckGo search instead of Google (more reliable).
+    Get URLs using duckduckgo_search.
+    Simple filters to avoid social networks.
     """
     print(f"[+] Searching DuckDuckGo for: {query}")
 
     urls = []
+
+    # Ask for more results than we need
     with DDGS() as ddgs:
-        for result in ddgs.text(query, max_results=num_results):
+        for result in ddgs.text(query, max_results=num_results * 4):
             url = result.get("href")
             if url:
                 urls.append(url)
 
-    skip_domains = ["facebook.com", "linkedin.com", "twitter.com", "x.com", "instagram.com"]
-    filtered = [url for url in urls if not any(domain in url for domain in skip_domains)]
+    print(f"[+] Got {len(urls)} raw URLs from search.")
+
+    skip_domains = [
+        "facebook.com", "instagram.com", "linkedin.com", "x.com",
+        "youtube.com", "wikipedia.org"
+    ]
+
+    filtered = [
+        url for url in urls
+        if not any(blocked in url.lower() for blocked in skip_domains)
+    ]
+
+    filtered = filtered[:num_results]
 
     print(f"[+] Got {len(filtered)} filtered URLs.")
     return filtered
@@ -163,11 +167,9 @@ def search_business_urls(query: str, num_results: int = 10):
 # =====================
 
 def get_sheet():
-    """
-    Authorise with service account and get the first worksheet of the spreadsheet.
-    """
+    """Authorise using service account and return worksheet."""
     if not SPREADSHEET_ID:
-        raise RuntimeError("SPREADSHEET_ID is not set. Add it to .env.")
+        raise RuntimeError("SPREADSHEET_ID is not set in .env")
 
     scopes = ["https://www.googleapis.com/auth/spreadsheets"]
 
@@ -177,18 +179,15 @@ def get_sheet():
     )
 
     client_gsheet = gspread.authorize(creds)
-
     sheet = client_gsheet.open_by_key(SPREADSHEET_ID).sheet1
     return sheet
 
 
 def ensure_headers(sheet):
-    """
-    If the sheet is empty, write the header row.
-    """
+    """Add header row if sheet is empty."""
     existing = sheet.get_all_values()
     if existing:
-        return  # already has data
+        return
 
     headers = [
         "timestamp",
@@ -206,9 +205,7 @@ def ensure_headers(sheet):
 
 
 def append_lead(sheet, info: dict):
-    """
-    Append one row (one business) to the sheet.
-    """
+    """Write one business row."""
     row = [
         info.get("timestamp", ""),
         info.get("search_query", ""),
@@ -221,7 +218,6 @@ def append_lead(sheet, info: dict):
         info.get("instagram", ""),
         info.get("facebook", ""),
     ]
-
     sheet.append_row(row, value_input_option="RAW")
 
 
@@ -230,11 +226,11 @@ def append_lead(sheet, info: dict):
 # =====================
 
 def main():
-    print("=== AI Outreach Agent for NZ Businesses (v0 - no AI emails yet) ===\n")
+    print("=== AI Outreach Agent for NZ Businesses (v0 – scraping only) ===\n")
 
     query = input("Enter search query (e.g. 'nail salon Auckland'): ").strip()
     if not query:
-        print("No query given. Exiting.")
+        print("No query provided. Exiting.")
         return
 
     try:
@@ -263,10 +259,10 @@ def main():
 
         info = parse_business_info(url, query)
         if not info:
-            print("    Skipped (could not parse).")
+            print("    Skipped (cannot parse website).")
             continue
 
-        print(f"    Business name guess: {info['business_name']}")
+        print(f"    Business name: {info['business_name']}")
         print(f"    Emails: {info['emails'] or 'None'}")
         print(f"    Phones: {info['phones'] or 'None'}")
         print(f"    Instagram: {info['instagram'] or 'None'}")
@@ -275,8 +271,7 @@ def main():
         append_lead(sheet, info)
         print("    → Saved to Google Sheet.\n")
 
-        # Small pause to be polite to servers
-        time.sleep(2)
+        time.sleep(2)  # polite delay
 
     print("\n[+] Done! Check your Google Sheet for new leads.")
 
