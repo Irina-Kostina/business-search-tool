@@ -1,28 +1,25 @@
 # NZ Business Outreach Agent
 
-### A Python automation tool that finds New Zealand small businesses, extracts their contact details, and saves the data into Google Sheets for easy outreach.
+### A Python utility that helps users discover publicly available information about New Zealand businesses and store collected data in Google Sheets for easier review and analysis.
 
 ---
 
 ## Overview
 
-**NZ Business Outreach Agent** is a lightweight Python automation tool that helps freelancers and small teams discover local New Zealand businesses and collect their public contact details automatically.
+**NZ Business Research Agent** is a small script that lets you explore local NZ businesses by collecting basic information from websites found through web searches.
 
-Simply enter a search query (e.g., `nail salon Auckland`, `dog groomer Wellington`, `wedding photographer NZ`) and the agent will:
+When you enter a search term (for example: “dog groomer Wellington”, “wedding photographer NZ”), the tool will:
 
-- Search DuckDuckGo for relevant local business websites
-- Filter out non-business and irrelevant results
-- Open each website and extract:
-  - business name
-  - website URL
-  - email addresses
-  - phone numbers
-  - Instagram links
-  - Facebook links
-- Avoid duplicates
-- Save everything into a connected **Google Sheet**
+- Search DuckDuckGo for websites related to your query
+- Skip common non-business sites (like social media links)
+- Open each website and gather publicly available information:
+- Business name (from the page title)
+- Website URL
+- Email addresses shown on the page
+- Avoid adding the same website twice
+- Save everything into a Google Sheet that you connect to
 
-This tool eliminates manual research and makes outreach 10× faster.
+This tool is meant to help organise and review publicly available business information. Any use of the collected data should follow all relevant laws, website terms, and ethical guidelines.
 
 ---
 
@@ -39,9 +36,7 @@ Automatically extracts:
 
 - Emails
 - Phone numbers
-- Social profiles
 - Business name
-- Metadata
 
 ### Duplicate Protection
 
@@ -59,18 +54,7 @@ Everything runs locally and reliably.
 
 ---
 
-## Use Cases
-
-- Freelance outreach (web developers, designers, SMM)
-- Lead generation
-- Market research
-- Local business discovery
-- Building your own AI-powered outreach agent
-- Automating cold email list creation
-
----
-
-## How It Works (High-Level)
+## How It Works
 
 1. **User enters a search term**
 
@@ -147,28 +131,11 @@ python main.py
 ```
 
 Enter a search query:
-nail salon Auckland
+dog grooming Auckland
 Enter number of results:
 5
 
-Check your Google Sheet — the leads will appear there automatically.
-
----
-
-### Why This Tool Exists
-
-Manually researching small businesses for outreach is slow and painful.
-This tool was created to:
-
-automate the boring parts
-
-save hours of manual searching
-
-give freelancers an edge
-
-provide clean, structured leads instantly
-
-It’s especially useful for those targeting NZ small businesses, where online presence is inconsistent and manually searching is time-consuming.
+Check your Google Sheet — the list will appear there automatically.
 
 ---
 
