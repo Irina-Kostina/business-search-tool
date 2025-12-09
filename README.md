@@ -1,4 +1,4 @@
-# NZ Business Outreach Agent
+# NZ Business Research Agent
 
 ### A Python utility that helps users discover publicly available information about New Zealand businesses and store collected data in Google Sheets for easier review and analysis.
 
